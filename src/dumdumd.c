@@ -189,6 +189,75 @@ static void _uv_stats_cb(uv_timer_t* w) {
     stats_cb();
 }
 
+static void _uv_udp_send_cb (uv_udp_send_t* req, int status) {
+    char* data = (char *) req->data;
+
+    free(data);
+}
+
+static int _send_udpw (uv_udp_t* udp_send, const struct sockaddr* ai_addr, const uv_buf_t* buf, ssize_t nread) {
+    int err;
+    uv_udp_send_t* udp_send_req = calloc(1, sizeof(uv_udp_send_t));
+    struct sockaddr_in addr;
+    const struct sockaddr_in *addr1;
+    uv_buf_t buf_ans;
+    //char buf_tmp[nread+16];
+    char* buf_tmp = calloc(nread+16, sizeof(char));
+    udp_send_req->data = buf_tmp;
+
+
+//    memset(&buf_tmp, 0, nread + 16);
+    memcpy(buf_tmp, buf->base, nread + 16);
+    buf_ans = uv_buf_init(buf_tmp, nread + 16); // 16 = A, www.seznam.cz, 77.75.77.39
+    //buf_ans = uv_buf_init(buf->base, nread + 16); // 16 = A, www.seznam.cz, 77.75.77.39
+
+/*
+    for (int i=0; i<buf_ans.len; i++)
+        printf("%02x ", buf_ans.base[i]);
+    printf("\n------%d------\n", buf_ans.len);
+*/
+    buf_ans.base[2] |= (uint8_t) 0x81; // +response, +recursion_desired
+    buf_ans.base[3] |= (uint8_t) 0x80; // +recursion_available
+    buf_ans.base[7] |= (uint8_t) 1; // +# answer_RRs
+    // A, www.seznam.cz, 77.75.77.39
+    buf_ans.base[31] = 0xc0;
+    buf_ans.base[32] = 0x0c;
+    buf_ans.base[33] = 0x00;
+    buf_ans.base[34] = 0x01;
+    buf_ans.base[35] = 0x00;
+    buf_ans.base[36] = 0x01;
+    buf_ans.base[37] = 0x00;
+    buf_ans.base[38] = 0x00;
+    buf_ans.base[39] = 0x00;
+    buf_ans.base[40] = 0x22;
+    buf_ans.base[41] = 0x00;
+    buf_ans.base[42] = 0x04;
+    buf_ans.base[43] = 0x4d;
+    buf_ans.base[44] = 0x4b;
+    buf_ans.base[45] = 0x4d;
+    buf_ans.base[46] = 0x27;
+/*
+    for (int i=0; i<buf_ans.len; i++)
+        printf("%02x ", buf_ans.base[i]);
+    printf("\n------\n");
+*/
+    addr1 = (const struct sockaddr_in *) ai_addr;
+    uv_ip4_addr("127.0.0.1", htons(addr1->sin_port), &addr);
+
+//    printf("buf_ans.len=%d\n", buf_ans.len);
+//    printf("buf_ans>base=%02x\n", buf_ans.base[1]);
+
+//    printf("[1]udp_send.send_queue_count=%d (0x%02x%02x)\n", udp_send->send_queue_count, buf_ans.base[0], buf_ans.base[1]);
+    if ((err = uv_udp_send(udp_send_req, udp_send, &buf_ans, 1,
+            (const struct sockaddr *)&addr, _uv_udp_send_cb))) {
+        fprintf(stderr, "uv_udp_send() %s\n", uv_strerror(err));
+        return err;
+    }
+//    printf("[2]udp_send.send_queue_count=%d (0x%02x%02x)\n", udp_send->send_queue_count, buf_ans.base[0], buf_ans.base[1]);
+
+    return 0;
+}
+
 static void _uv_alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
     buf->base = recvbuf;
     buf->len = sizeof(recvbuf);
@@ -198,15 +267,26 @@ static void _uv_close_cb(uv_handle_t* handle) {
     free(handle);
 }
 
-static void _uv_udp_recv_cb(uv_udp_t* handle, ssize_t nread, const uv_buf_t* buf, const struct sockaddr* addr, unsigned flags) {
+static void _uv_udp_recv_cb(uv_udp_t* handle, ssize_t nread, const uv_buf_t* buf,
+        const struct sockaddr* addr, unsigned flags) {
+    int err;
+
     if (nread < 0) {
         uv_udp_recv_stop(handle);
         uv_close((uv_handle_t*)handle, _uv_close_cb);
         return;
     }
 
-    _stats.pkts++;
-    _stats.bytes += nread;
+    if (nread > 0) {
+        _stats.pkts++;
+        _stats.bytes += nread;;
+
+//        printf("Recv callback\n");
+
+        err = _send_udpw(handle, addr, buf, nread);
+        if (err)
+            fprintf(stderr, "Packet send (err=%d, %s)\n", err, uv_strerror(err));
+    }
 }
 
 static void _uv_tcp_recv_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf) {
@@ -251,6 +331,7 @@ static void _uv_on_connect_cb(uv_stream_t* server, int status) {
     _stats.conns++;
 }
 #endif
+
 
 int main(int argc, char* argv[]) {
     int opt, use_udp = 0, use_tcp = 0, reuse_addr = 0, reuse_port = 0, linger = 0;
