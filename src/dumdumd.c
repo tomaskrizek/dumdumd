@@ -204,7 +204,6 @@ static int _send_udpw (uv_udp_t* udp_send, const struct sockaddr* ai_addr, const
     const struct sockaddr_in6 *addr1;
     uv_buf_t buf_ans;
     //char buf_tmp[nread+16];
-    printf("%ld\n", nread);
     char* buf_tmp = calloc(nread+16, sizeof(char));
     udp_send_req->data = buf_tmp;
 
@@ -244,15 +243,15 @@ static int _send_udpw (uv_udp_t* udp_send, const struct sockaddr* ai_addr, const
         printf("%02x ", buf_ans.base[i]);
     printf("\n------\n");
 */
-    addr1 = (const struct sockaddr_in6 *) ai_addr;
-    uv_ip6_addr(SRC_IP6_ADDR, htons(addr1->sin6_port), &addr);
+    //addr1 = (const struct sockaddr_in6 *) ai_addr;
+    //uv_ip6_addr(SRC_IP6_ADDR, htons(addr1->sin6_port), &addr);
 
 //    printf("buf_ans.len=%d\n", buf_ans.len);
 //    printf("buf_ans>base=%02x\n", buf_ans.base[1]);
 
 //    printf("[1]udp_send.send_queue_count=%d (0x%02x%02x)\n", udp_send->send_queue_count, buf_ans.base[0], buf_ans.base[1]);
     if ((err = uv_udp_send(udp_send_req, udp_send, &buf_ans, 1,
-            (const struct sockaddr *)&addr, _uv_udp_send_cb))) {
+            ai_addr, _uv_udp_send_cb))) {
         fprintf(stderr, "uv_udp_send() %s\n", uv_strerror(err));
         return err;
     }
