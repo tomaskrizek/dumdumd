@@ -221,24 +221,24 @@ static int _send_udpw (uv_udp_t* udp_send, const struct sockaddr* ai_addr, const
 */
     buf_ans.base[2] |= (uint8_t) 0x81; // +response, +recursion_desired
     buf_ans.base[3] |= (uint8_t) 0x80; // +recursion_available
-    buf_ans.base[7] |= (uint8_t) 1; // +# answer_RRs
+    buf_ans.base[7] |= (uint8_t) 0; // +# answer_RRs
     // A, www.seznam.cz, 77.75.77.39
-    buf_ans.base[31] = 0xc0;
-    buf_ans.base[32] = 0x0c;
-    buf_ans.base[33] = 0x00;
-    buf_ans.base[34] = 0x01;
-    buf_ans.base[35] = 0x00;
-    buf_ans.base[36] = 0x01;
-    buf_ans.base[37] = 0x00;
-    buf_ans.base[38] = 0x00;
-    buf_ans.base[39] = 0x00;
-    buf_ans.base[40] = 0x22;
-    buf_ans.base[41] = 0x00;
-    buf_ans.base[42] = 0x04;
-    buf_ans.base[43] = 0x4d;
-    buf_ans.base[44] = 0x4b;
-    buf_ans.base[45] = 0x4d;
-    buf_ans.base[46] = 0x27;
+    //buf_ans.base[31] = 0xc0;
+    //buf_ans.base[32] = 0x0c;
+    //buf_ans.base[33] = 0x00;
+    //buf_ans.base[34] = 0x01;
+    //buf_ans.base[35] = 0x00;
+    //buf_ans.base[36] = 0x01;
+    //buf_ans.base[37] = 0x00;
+    //buf_ans.base[38] = 0x00;
+    //buf_ans.base[39] = 0x00;
+    //buf_ans.base[40] = 0x22;
+    //buf_ans.base[41] = 0x00;
+    //buf_ans.base[42] = 0x04;
+    //buf_ans.base[43] = 0x4d;
+    //buf_ans.base[44] = 0x4b;
+    //buf_ans.base[45] = 0x4d;
+    //buf_ans.base[46] = 0x27;
 /*
     for (int i=0; i<buf_ans.len; i++)
         printf("%02x ", buf_ans.base[i]);
