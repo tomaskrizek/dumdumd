@@ -250,7 +250,7 @@ static int _send_udpw (uv_udp_t* udp_send, const struct sockaddr* ai_addr, const
 //    printf("buf_ans>base=%02x\n", buf_ans.base[1]);
 
 //    printf("[1]udp_send.send_queue_count=%d (0x%02x%02x)\n", udp_send->send_queue_count, buf_ans.base[0], buf_ans.base[1]);
-    if ((err = uv_udp_send(udp_send_req, udp_send, &buf_ans, 1,
+    if ((err = uv_udp_try_send(udp_send_req, udp_send, &buf_ans, 1,
             ai_addr, _uv_udp_send_cb))) {
         fprintf(stderr, "uv_udp_send() %s\n", uv_strerror(err));
         return err;
