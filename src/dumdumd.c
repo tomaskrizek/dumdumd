@@ -50,6 +50,8 @@
 #error "No event library backend found, need at least libev or libuv"
 #endif
 
+#define SRC_IP6_ADDR "fd8d:fbca:f789:166::cafe"
+
 char* program_name = 0;
 #define STATS_INIT { 0, 0, 0, 0, 0 }
 struct stats {
@@ -198,10 +200,11 @@ static void _uv_udp_send_cb (uv_udp_send_t* req, int status) {
 static int _send_udpw (uv_udp_t* udp_send, const struct sockaddr* ai_addr, const uv_buf_t* buf, ssize_t nread) {
     int err;
     uv_udp_send_t* udp_send_req = calloc(1, sizeof(uv_udp_send_t));
-    struct sockaddr_in addr;
-    const struct sockaddr_in *addr1;
+    struct sockaddr_in6 addr;
+    const struct sockaddr_in6 *addr1;
     uv_buf_t buf_ans;
     //char buf_tmp[nread+16];
+    printf("%ld\n", nread);
     char* buf_tmp = calloc(nread+16, sizeof(char));
     udp_send_req->data = buf_tmp;
 
@@ -241,8 +244,8 @@ static int _send_udpw (uv_udp_t* udp_send, const struct sockaddr* ai_addr, const
         printf("%02x ", buf_ans.base[i]);
     printf("\n------\n");
 */
-    addr1 = (const struct sockaddr_in *) ai_addr;
-    uv_ip4_addr("127.0.0.1", htons(addr1->sin_port), &addr);
+    addr1 = (const struct sockaddr_in6 *) ai_addr;
+    uv_ip6_addr(SRC_IP6_ADDR, htons(addr1->sin6_port), &addr);
 
 //    printf("buf_ans.len=%d\n", buf_ans.len);
 //    printf("buf_ans>base=%02x\n", buf_ans.base[1]);
